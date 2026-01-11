@@ -183,7 +183,7 @@ export async function parseDiscoveryNote(args: {
   receiverBase: Uint8Array;
 }): Promise<{ matches: boolean; stealthPublicKey?: Uint8Array }> {
   const ephPublicKey = args.note.slice(0, 32);
-  const receivedTag = args.note.slice(32);
+  const receivedTag = args.note.slice(32, 64);
 
   const ecdhSecret = await xhd.ECDH(
     args.rootKey,
