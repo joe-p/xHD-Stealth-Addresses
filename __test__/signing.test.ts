@@ -1,7 +1,6 @@
 import {
   BIP32DerivationType,
   fromSeed,
-  harden,
   KeyContext,
   XHDWalletAPI,
 } from "@algorandfoundation/xhd-wallet-api";
@@ -19,7 +18,6 @@ const xhd = new XHDWalletAPI();
 const SEED = new Uint8Array(32);
 crypto.getRandomValues(SEED);
 
-const PATH = [harden(44), harden(283), harden(0), 0, 0];
 const ROOT_KEY = fromSeed(SEED);
 const MESSAGE = new TextEncoder().encode("Hello, world!");
 
@@ -27,9 +25,13 @@ describe("xHD Stealth", () => {
   it("xHdStealthSign", async () => {
     const tweakScalar = BigInt(1234567890);
 
-    const basePublic = (
-      await xhd.deriveKey(ROOT_KEY, PATH, false, BIP32DerivationType.Peikert)
-    ).slice(0, 32);
+    const basePublic = await xhd.keyGen(
+      ROOT_KEY,
+      KeyContext.Address,
+      0,
+      0,
+      BIP32DerivationType.Peikert,
+    );
 
     const sig = await xHdStealthSign({
       rootKey: ROOT_KEY,
