@@ -1,14 +1,17 @@
 import {
   BIP32DerivationType,
   harden,
+  KeyContext,
   XHDWalletAPI,
 } from "@algorandfoundation/xhd-wallet-api";
-import { ed25519 } from "@noble/curves/ed25519.js";
+import { ed25519, x25519 } from "@noble/curves/ed25519.js";
 import {
   bytesToNumberLE,
   concatBytes,
+  equalBytes,
   numberToBytesLE,
 } from "@noble/curves/utils.js";
+import { blake2b } from "@noble/hashes/blake2.js";
 import { sha512 } from "js-sha512";
 const ORDER = ed25519.Point.CURVE().n; // subgroup order
 const scalar = {
@@ -117,4 +120,83 @@ export async function xHdStealthSign({
     stealthSecret.prefix,
     stealthPublicKey,
   );
+}
+
+/**
+ * Generate a note that is used for discovery. The note is EPHEMERAL_KEY || DISCOVERY_TAG
+ * Where DISCOVERY_TAG = SHA512("discovery-tag" || ECDH_SECRET || sender || fv || lv || lease)
+ */
+export async function generateDiscoveryNote(args: {
+  sender: Uint8Array;
+  receiver: Uint8Array;
+  firstValid: number;
+  lastValid: number;
+  lease: Uint8Array;
+}) {
+  const ephEd = ed25519.keygen();
+  const ephMontgomerySk = ed25519.utils.toMontgomerySecret(ephEd.secretKey);
+  const ephMontgomeryPk = ed25519.utils.toMontgomery(ephEd.publicKey);
+  const receiverMontgomeryPk = ed25519.utils.toMontgomery(args.receiver);
+
+  const sharedPoint = x25519.getSharedSecret(
+    ephMontgomerySk,
+    receiverMontgomeryPk,
+  );
+
+  const secret = blake2b(
+    concatBytes(sharedPoint, ephMontgomeryPk, receiverMontgomeryPk),
+    {
+      dkLen: 32,
+    },
+  );
+
+  const discoveryTag = sha512.digest(
+    concatBytes(
+      new TextEncoder().encode("discovery-tag"),
+      secret,
+      args.sender,
+      numberToBytesLE(args.firstValid, 8),
+      numberToBytesLE(args.lastValid, 8),
+      args.lease,
+    ),
+  );
+
+  return concatBytes(ephEd.publicKey, new Uint8Array(discoveryTag));
+}
+
+export async function checkDiscoveryNote(args: {
+  note: Uint8Array;
+  rootKey: Uint8Array;
+  account: number;
+  index: number;
+  sender: Uint8Array;
+  firstValid: number;
+  lastValid: number;
+  lease: Uint8Array;
+}): Promise<boolean> {
+  const ephPublicKey = args.note.slice(0, 32);
+  const receivedTag = args.note.slice(32);
+
+  const ecdhSecret = await xhd.ECDH(
+    args.rootKey,
+    KeyContext.Address,
+    args.account,
+    args.index,
+    ephPublicKey,
+    false,
+    BIP32DerivationType.Peikert,
+  );
+
+  const discoveryTag = sha512.digest(
+    concatBytes(
+      new TextEncoder().encode("discovery-tag"),
+      ecdhSecret,
+      args.sender,
+      numberToBytesLE(args.firstValid, 8),
+      numberToBytesLE(args.lastValid, 8),
+      args.lease,
+    ),
+  );
+
+  return equalBytes(receivedTag, new Uint8Array(discoveryTag));
 }

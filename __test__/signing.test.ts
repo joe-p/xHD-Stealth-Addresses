@@ -2,10 +2,16 @@ import {
   BIP32DerivationType,
   fromSeed,
   harden,
+  KeyContext,
   XHDWalletAPI,
 } from "@algorandfoundation/xhd-wallet-api";
 import { ed25519 } from "../node_modules/@noble/curves/ed25519";
-import { deriveStealthPublicKey, xHdStealthSign } from "../src/index";
+import {
+  deriveStealthPublicKey,
+  xHdStealthSign,
+  generateDiscoveryNote,
+  checkDiscoveryNote,
+} from "../src/index";
 import { describe, it, expect } from "vitest";
 
 const xhd = new XHDWalletAPI();
@@ -38,6 +44,44 @@ describe("xHD Stealth", () => {
       MESSAGE,
       deriveStealthPublicKey(basePublic, tweakScalar),
     );
+
+    expect(isValid).toBe(true);
+  });
+
+  it("discovery", async () => {
+    const sender = ed25519.keygen().publicKey;
+
+    const receiverPublic = await xhd.keyGen(
+      ROOT_KEY,
+      KeyContext.Address,
+      0,
+      0,
+      BIP32DerivationType.Peikert,
+    );
+
+    const firstValid = 100;
+    const lastValid = 200;
+    const lease = new Uint8Array(32);
+    crypto.getRandomValues(lease);
+
+    const note = await generateDiscoveryNote({
+      sender,
+      receiver: receiverPublic,
+      firstValid,
+      lastValid,
+      lease,
+    });
+
+    const isValid = await checkDiscoveryNote({
+      note,
+      rootKey: ROOT_KEY,
+      account: 0,
+      index: 0,
+      sender,
+      firstValid,
+      lastValid,
+      lease,
+    });
 
     expect(isValid).toBe(true);
   });

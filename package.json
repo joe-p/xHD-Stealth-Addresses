@@ -14,6 +14,7 @@
   "dependencies": {
     "@algorandfoundation/xhd-wallet-api": "file:algorandfoundation-xhd-wallet-api-1.0.3.tgz",
     "@noble/curves": "^2.0.1",
+    "@noble/hashes": "^2.0.1",
     "js-sha512": "^0.9.0"
   },
   "devDependencies": {

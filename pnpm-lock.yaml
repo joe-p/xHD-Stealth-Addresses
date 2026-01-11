@@ -14,6 +14,9 @@ importers:
       '@noble/curves':
         specifier: ^2.0.1
         version: 2.0.1
+      '@noble/hashes':
+        specifier: ^2.0.1
+        version: 2.0.1
       js-sha512:
         specifier: ^0.9.0
         version: 0.9.0
