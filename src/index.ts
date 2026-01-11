@@ -28,7 +28,7 @@ export function getPath(account: number, addressIndex: number) {
 
 const xhd = new XHDWalletAPI();
 
-export function deriveStealthPublicKey(
+export function deriveStealthPublicKeyRaw(
   basePublicKey: Uint8Array,
   tweakScalar: bigint,
 ): Uint8Array {
@@ -78,7 +78,7 @@ function deriveStealthPrivateKey(
   return { scalar: tweakedScalar, prefix: new Uint8Array(tweakdPrefix) };
 }
 
-export async function xHdStealthSign({
+export async function xHdStealthSignRaw({
   rootKey,
   account,
   index,
@@ -96,7 +96,7 @@ export async function xHdStealthSign({
   const basePublic = (
     await xhd.deriveKey(rootKey, path, false, BIP32DerivationType.Peikert)
   ).slice(0, 32);
-  const stealthPublicKey = deriveStealthPublicKey(basePublic, tweakScalar);
+  const stealthPublicKey = deriveStealthPublicKeyRaw(basePublic, tweakScalar);
 
   const basePrivate = await xhd.deriveKey(
     rootKey,
@@ -132,7 +132,7 @@ export async function generateDiscoveryNote(args: {
   firstValid: number;
   lastValid: number;
   lease: Uint8Array;
-}) {
+}): Promise<{ note: Uint8Array; stealthPublicKey: Uint8Array }> {
   const ephEd = ed25519.keygen();
   const ephMontgomerySk = ed25519.utils.toMontgomerySecret(ephEd.secretKey);
   const ephMontgomeryPk = ed25519.utils.toMontgomery(ephEd.publicKey);
@@ -162,7 +162,13 @@ export async function generateDiscoveryNote(args: {
     { dkLen: 32 },
   );
 
-  return concatBytes(ephEd.publicKey, new Uint8Array(discoveryTag));
+  const note = concatBytes(ephEd.publicKey, new Uint8Array(discoveryTag));
+  const stealthPublicKey = deriveStealthPublicKeyRaw(
+    args.receiver,
+    bytesToNumberLE(secret) % ORDER,
+  );
+
+  return { note, stealthPublicKey };
 }
 
 export async function checkDiscoveryNote(args: {
@@ -201,4 +207,32 @@ export async function checkDiscoveryNote(args: {
   );
 
   return equalBytes(receivedTag, new Uint8Array(discoveryTag));
+}
+
+export async function xHdStealthSign(args: {
+  rootKey: Uint8Array;
+  account: number;
+  index: number;
+  note: Uint8Array;
+  message: Uint8Array;
+}): Promise<Uint8Array> {
+  const ephPublicKey = args.note.slice(0, 32);
+
+  const ecdhSecret = await xhd.ECDH(
+    args.rootKey,
+    KeyContext.Address,
+    args.account,
+    args.index,
+    ephPublicKey,
+    false,
+    BIP32DerivationType.Peikert,
+  );
+
+  return xHdStealthSignRaw({
+    rootKey: args.rootKey,
+    account: args.account,
+    index: args.index,
+    tweakScalar: bytesToNumberLE(ecdhSecret) % ORDER,
+    message: args.message,
+  });
 }
