@@ -8,10 +8,9 @@ import { ed25519 } from "../node_modules/@noble/curves/ed25519";
 import {
   deriveStealthPublicKeyRaw,
   xHdStealthSignRaw,
-  generateDiscoveryNote,
+  generateStealthKeyAndNote,
   checkDiscoveryNote,
   xHdStealthSign,
-  deriveStealthPublicKey,
 } from "../src/index";
 import { describe, it, expect } from "vitest";
 import { equalBytes } from "@noble/curves/utils.js";
@@ -69,7 +68,7 @@ describe("xHD Stealth", () => {
     const lease = new Uint8Array(32);
     crypto.getRandomValues(lease);
 
-    const { note } = await generateDiscoveryNote({
+    const { note } = await generateStealthKeyAndNote({
       sender,
       receiver: receiverPublic,
       firstValid,
@@ -107,7 +106,7 @@ describe("xHD Stealth", () => {
     const lease = new Uint8Array(32);
     crypto.getRandomValues(lease);
 
-    const { note, stealthPublicKey } = await generateDiscoveryNote({
+    const { note, stealthPublicKey } = await generateStealthKeyAndNote({
       sender,
       receiver: receiverPublic,
       firstValid,

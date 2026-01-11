@@ -126,7 +126,7 @@ export async function xHdStealthSignRaw({
  * Generate a note that is used for discovery. The note is EPHEMERAL_KEY || DISCOVERY_TAG
  * Where DISCOVERY_TAG = BLAKE2B("discovery-tag" || ECDH_SECRET || sender || fv || lv || lease)
  */
-export async function generateDiscoveryNote(args: {
+export async function generateStealthKeyAndNote(args: {
   sender: Uint8Array;
   receiver: Uint8Array;
   firstValid: number;
