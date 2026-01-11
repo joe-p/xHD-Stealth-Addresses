@@ -1,0 +1,23 @@
+{
+  "name": "xhd-stealth",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.22.0",
+  "dependencies": {
+    "@algorandfoundation/xhd-wallet-api": "file:algorandfoundation-xhd-wallet-api-1.0.3.tgz",
+    "@noble/curves": "^2.0.1",
+    "js-sha512": "^0.9.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
+  }
+}
