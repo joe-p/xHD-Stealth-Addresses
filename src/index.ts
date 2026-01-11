@@ -129,8 +129,8 @@ export async function xHdStealthSignRaw({
 export async function generateStealthKeyAndNote(args: {
   sender: Uint8Array;
   receiver: Uint8Array;
-  firstValid: number;
-  lastValid: number;
+  firstValid: bigint;
+  lastValid: bigint;
   lease: Uint8Array;
 }): Promise<{ note: Uint8Array; stealthPublicKey: Uint8Array }> {
   const ephEd = ed25519.keygen();
@@ -171,16 +171,17 @@ export async function generateStealthKeyAndNote(args: {
   return { note, stealthPublicKey };
 }
 
-export async function checkDiscoveryNote(args: {
+export async function parseDiscoveryNote(args: {
   note: Uint8Array;
   rootKey: Uint8Array;
   account: number;
   index: number;
   sender: Uint8Array;
-  firstValid: number;
-  lastValid: number;
+  firstValid: bigint;
+  lastValid: bigint;
   lease: Uint8Array;
-}): Promise<boolean> {
+  receiverBase: Uint8Array;
+}): Promise<{ matches: boolean; stealthPublicKey?: Uint8Array }> {
   const ephPublicKey = args.note.slice(0, 32);
   const receivedTag = args.note.slice(32);
 
@@ -206,7 +207,19 @@ export async function checkDiscoveryNote(args: {
     { dkLen: 32 },
   );
 
-  return equalBytes(receivedTag, new Uint8Array(discoveryTag));
+  if (!equalBytes(receivedTag, new Uint8Array(discoveryTag))) {
+    return { matches: false };
+  }
+
+  const derivedStealthPublicKey = deriveStealthPublicKeyRaw(
+    args.receiverBase,
+    bytesToNumberLE(ecdhSecret) % ORDER,
+  );
+
+  return {
+    matches: true,
+    stealthPublicKey: derivedStealthPublicKey,
+  };
 }
 
 export async function xHdStealthSign(args: {

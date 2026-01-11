@@ -9,7 +9,7 @@ import {
   deriveStealthPublicKeyRaw,
   xHdStealthSignRaw,
   generateStealthKeyAndNote,
-  checkDiscoveryNote,
+  parseDiscoveryNote,
   xHdStealthSign,
 } from "../src/index";
 import { describe, it, expect } from "vitest";
@@ -63,8 +63,8 @@ describe("xHD Stealth", () => {
       BIP32DerivationType.Peikert,
     );
 
-    const firstValid = 100;
-    const lastValid = 200;
+    const firstValid = 100n;
+    const lastValid = 200n;
     const lease = new Uint8Array(32);
     crypto.getRandomValues(lease);
 
@@ -76,7 +76,7 @@ describe("xHD Stealth", () => {
       lease,
     });
 
-    const isValid = await checkDiscoveryNote({
+    const parsed = await parseDiscoveryNote({
       note,
       rootKey: ROOT_KEY,
       account: 0,
@@ -85,9 +85,10 @@ describe("xHD Stealth", () => {
       firstValid,
       lastValid,
       lease,
+      receiverBase: receiverPublic,
     });
 
-    expect(isValid).toBe(true);
+    expect(parsed.matches).toBe(true);
   });
 
   it("xHdStealthSign", async () => {
@@ -101,8 +102,8 @@ describe("xHD Stealth", () => {
       BIP32DerivationType.Peikert,
     );
 
-    const firstValid = 100;
-    const lastValid = 200;
+    const firstValid = 100n;
+    const lastValid = 200n;
     const lease = new Uint8Array(32);
     crypto.getRandomValues(lease);
 
@@ -116,7 +117,7 @@ describe("xHD Stealth", () => {
 
     expect(equalBytes(stealthPublicKey, receiverPublic)).toBe(false);
 
-    const isValid = await checkDiscoveryNote({
+    const parsed = await parseDiscoveryNote({
       note,
       rootKey: ROOT_KEY,
       account: 0,
@@ -125,9 +126,10 @@ describe("xHD Stealth", () => {
       firstValid,
       lastValid,
       lease,
+      receiverBase: receiverPublic,
     });
 
-    expect(isValid).toBe(true);
+    expect(parsed.matches).toBe(true);
 
     const sig = await xHdStealthSign({
       note,
