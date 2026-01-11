@@ -124,7 +124,7 @@ export async function xHdStealthSign({
 
 /**
  * Generate a note that is used for discovery. The note is EPHEMERAL_KEY || DISCOVERY_TAG
- * Where DISCOVERY_TAG = SHA512("discovery-tag" || ECDH_SECRET || sender || fv || lv || lease)
+ * Where DISCOVERY_TAG = BLAKE2B("discovery-tag" || ECDH_SECRET || sender || fv || lv || lease)
  */
 export async function generateDiscoveryNote(args: {
   sender: Uint8Array;
@@ -150,7 +150,7 @@ export async function generateDiscoveryNote(args: {
     },
   );
 
-  const discoveryTag = sha512.digest(
+  const discoveryTag = blake2b(
     concatBytes(
       new TextEncoder().encode("discovery-tag"),
       secret,
@@ -159,6 +159,7 @@ export async function generateDiscoveryNote(args: {
       numberToBytesLE(args.lastValid, 8),
       args.lease,
     ),
+    { dkLen: 32 },
   );
 
   return concatBytes(ephEd.publicKey, new Uint8Array(discoveryTag));
@@ -187,7 +188,7 @@ export async function checkDiscoveryNote(args: {
     BIP32DerivationType.Peikert,
   );
 
-  const discoveryTag = sha512.digest(
+  const discoveryTag = blake2b(
     concatBytes(
       new TextEncoder().encode("discovery-tag"),
       ecdhSecret,
@@ -196,6 +197,7 @@ export async function checkDiscoveryNote(args: {
       numberToBytesLE(args.lastValid, 8),
       args.lease,
     ),
+    { dkLen: 32 },
   );
 
   return equalBytes(receivedTag, new Uint8Array(discoveryTag));
