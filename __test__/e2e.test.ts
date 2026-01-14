@@ -63,6 +63,9 @@ describe("xHD Stealth E2E", () => {
   });
 
   it("Send stealth payment", async () => {
+    const receiverBalanceBefore = (await algorand.account.getInformation(receiver)).balance.microAlgo;
+    expect(receiverBalanceBefore).toBe(0n);
+
     // Put the sending side in a closure to ensure we don't accidentally use sender variables
     // in the receiving logic
     const send = async () => {
@@ -80,9 +83,14 @@ describe("xHD Stealth E2E", () => {
         lease,
       });
 
+      const stealthAddress = new Address(stealthPublicKey);
+
+      const stealthBalanceBefore = (await algorand.account.getInformation(stealthAddress)).balance.microAlgo;
+      expect(stealthBalanceBefore).toBe(0n);
+
       const pay = await algorand.send.payment({
         sender,
-        receiver: new Address(stealthPublicKey),
+        receiver: stealthAddress,
         amount: AlgoAmount.Algo(1),
         firstValidRound: firstValid,
         lastValidRound: lastValid,
@@ -107,6 +115,12 @@ describe("xHD Stealth E2E", () => {
         },
       });
 
+      const receiverBalanceAfter = (await algorand.account.getInformation(receiver)).balance.microAlgo;
+      expect(receiverBalanceAfter).toBe(0n);
+
+      const stealthBalanceAfter = (await algorand.account.getInformation(stealthAddress)).balance.algo;
+      expect(stealthBalanceAfter).toBe(1);
+
       return pay.confirmation.txn.txn;
     };
 
@@ -129,7 +143,7 @@ describe("xHD Stealth E2E", () => {
 
     // now spend from the stealth address
     await algorand.send.payment({
-      sender: new Address(parsed.stealthPublicKey!),
+      sender: stealthAddress,
       receiver: sender,
       amount: AlgoAmount.Algo(0.5),
       signer: async (txns: Transaction[], _: number[]) => {
