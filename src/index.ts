@@ -12,7 +12,8 @@ import {
   numberToBytesLE,
 } from "@noble/curves/utils.js";
 import { blake2b } from "@noble/hashes/blake2.js";
-import { sha512 } from "js-sha512";
+import { sha512 } from "@noble/hashes/sha2.js";
+
 const ORDER = ed25519.Point.CURVE().n; // subgroup order
 const scalar = {
   add: (a: bigint, b: bigint) => {
@@ -47,7 +48,7 @@ function signWithExtendedKey(
   publicKey: Uint8Array,
 ): Uint8Array {
   // 1. r = SHA512(prefix || message) mod L
-  const rHash = sha512.digest(concatBytes(prefix, message));
+  const rHash = sha512(concatBytes(prefix, message));
   const r = bytesToNumberLE(new Uint8Array(rHash)) % ORDER;
 
   // 2. R = r * G
@@ -55,7 +56,7 @@ function signWithExtendedKey(
   const Rbytes = R.toBytes();
 
   // 3. k = SHA512(R || publicKey || message) mod L
-  const kHash = sha512.digest(concatBytes(Rbytes, publicKey, message));
+  const kHash = sha512(concatBytes(Rbytes, publicKey, message));
   const k = bytesToNumberLE(new Uint8Array(kHash)) % ORDER;
 
   // 4. S = (r + k * scalar) mod L
@@ -71,7 +72,7 @@ function deriveStealthPrivateKey(
   basePrefix: Uint8Array,
 ): { scalar: bigint; prefix: Uint8Array } {
   const tweakedScalar = scalar.add(baseScalar, tweakScalar);
-  const tweakdPrefix = sha512.digest(
+  const tweakdPrefix = sha512(
     concatBytes(numberToBytesLE(tweakScalar, 32), basePrefix),
   );
 

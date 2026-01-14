@@ -17,9 +17,6 @@ importers:
       '@noble/hashes':
         specifier: ^2.0.1
         version: 2.0.1
-      js-sha512:
-        specifier: ^0.9.0
-        version: 0.9.0
     devDependencies:
       '@algorandfoundation/algokit-utils':
         specifier: 10.0.0-alpha.29
@@ -460,9 +457,6 @@ packages:
 
   js-sha512@0.8.0:
     resolution: {integrity: sha512-PWsmefG6Jkodqt+ePTvBZCSMFgN7Clckjd0O7su3I0+BW2QWUTJNzjktHsztGLhncP2h8mcF9V9Y2Ha59pAViQ==}
-
-  js-sha512@0.9.0:
-    resolution: {integrity: sha512-mirki9WS/SUahm+1TbAPkqvbCiCfOAAsyXeHxK1UkullnJVVqoJG2pL9ObvT05CN+tM7fxhfYm0NbXn+1hWoZg==}
 
   json-bigint@1.0.0:
     resolution: {integrity: sha512-SiPv/8VpZuWbvLSMtTDU8hEfrZWg/mH/nV/b4o0CYbSxu1UIQPLdwKOCIyLQX+VIPO5vrLX3i8qtqFyhdPSUSQ==}
@@ -951,8 +945,6 @@ snapshots:
   ieee754@1.2.1: {}
 
   js-sha512@0.8.0: {}
-
-  js-sha512@0.9.0: {}
 
   json-bigint@1.0.0:
     dependencies:
