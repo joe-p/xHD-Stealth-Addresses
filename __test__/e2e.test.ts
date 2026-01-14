@@ -143,7 +143,7 @@ describe("xHD Stealth E2E", () => {
 
     // now spend from the stealth address
     await algorand.send.payment({
-      sender: stealthAddress,
+      sender: new Address(parsed.stealthPublicKey!),
       receiver: sender,
       amount: AlgoAmount.Algo(0.5),
       signer: async (txns: Transaction[], _: number[]) => {
